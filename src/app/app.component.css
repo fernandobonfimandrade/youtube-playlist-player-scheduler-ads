@@ -1,0 +1,8 @@
+/* Estilos do componente principal aqui */
+html, body, app-root, app-youtube-player, youtube-player, youtube-player > div, youtube-player-placeholder, .video-player-container, iframe{
+    width: 100%;
+    height: 100%;
+    display: block;
+    padding: 0;
+    margin: 0;
+}

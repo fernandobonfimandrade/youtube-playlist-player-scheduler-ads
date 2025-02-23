@@ -1,0 +1,12 @@
+<div class="video-player-container" *ngIf="currentPlaylistVideos.length > 0">
+  <youtube-player
+    [videoId]="currentVideoId"
+    [height]="'100vh'"
+    [width]="'100vw'"
+    (ready)="onPlayerReady($event)"
+    [playerVars]="{ autoplay: 1, mute: 1 }"
+    (stateChange)="onPlayerStateChange($event)"
+  >
+  </youtube-player>
+  <!-- <iframe [src]="getEmbededUrl(currentVideoId)" frameborder="0" allow="autoplay"></iframe> -->
+</div>
