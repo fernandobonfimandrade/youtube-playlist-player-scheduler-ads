@@ -33,7 +33,8 @@
             "polyfills": ["zone.js"],
             "scripts": ["src/app/assets/js/youtube-iframe-api.js"],
             "styles": ["src/global_styles.css"],
-            "tsConfig": "tsconfig.app.json"
+            "tsConfig": "tsconfig.app.json",
+            "baseHref": "/youtube-playlist-player-scheduler-ads/"
           }
         },
         "serve": {
