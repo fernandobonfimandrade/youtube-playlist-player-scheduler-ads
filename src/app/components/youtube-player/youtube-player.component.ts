@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, ViewEncapsulation } from '@angular/core';
-import { interval, Subscription } from 'rxjs';
+import { combineLatest, interval, Subscription } from 'rxjs';
 import { YoutubeService } from '../../services/youtube.service';
 import { YouTubePlayer } from '@angular/youtube-player';
 import { CommonModule } from '@angular/common';
@@ -17,34 +17,34 @@ export class YoutubePlayerComponent implements OnInit, OnDestroy {
   // IDs das playlists que serão reproduzidas em sequência
   scheduledSub: Subscription = new Subscription();
   YTPSub: Subscription = new Subscription();
+  tempSub: Subscription = new Subscription();
 
   // Armazena o estado atual da playlist para que ele seja retomado após o vídeo agendado
   savedPlaylistIndex: number = 0;
   savedVideoIndex: number = 0;
 
   playlists: string[] = ['PLfKvtXXEgOvCAWcpT_PU4KIwLRtjKUqv5'];
+  adsPlaylists: string = 'PLfKvtXXEgOvAaRGUchlMexLdnErwaCZgG';
   currentPlaylistIndex = 0;
   currentPlaylistVideos: any[] = [];
+  currentScheduledPlaylistVideos: any[] = [];
   currentVideoIndex = 0;
   currentVideoId = '';
-  playADSCountPerHour = 60;
+  playADSCountPerHour = 4;
+  scheduleTime = 0;
+  adsStartTime: number = 0;
+  adsTimeProgress: number = 0;
 
   // Para identificar se um vídeo agendado está em execução
   isScheduledPlaying = false;
 
   // IDs dos vídeos que precisam ser reproduzidos em intervalos definidos (ex: N vezes por hora)
-  scheduledADSVideoIds: string[] = ['a3ICNMQW7Ok','U6fC4Ij608A'];
-  scheduledADSInterval = 60 * 60 * 1000 / (this.scheduledADSVideoIds.length * this.playADSCountPerHour); // Exemplo: a cada 30 minutos (2 vezes por hora)
+  scheduledADSVideoIds: string[] = [];
   scheduledADSIndex = 0;
   constructor(private youtubeService: YoutubeService, private sanitizer: DomSanitizer) {}
 
   ngOnInit(): void {
-    const tag = document.createElement('script');
-
-    tag.src = 'https://www.youtube.com/iframe_api';
-    document.body.appendChild(tag);
-    this.loadCurrentPlaylist();
-    this.startScheduledTimer();
+    this.loadInitialPlaylists();
   }
 
   ngOnDestroy(): void {
@@ -57,22 +57,37 @@ export class YoutubePlayerComponent implements OnInit, OnDestroy {
   }
 
   // Carrega os vídeos da playlist atual via YoutubeService
-  loadCurrentPlaylist(): void {
+  loadInitialPlaylists(): void {
     if (this.playlists.length === 0) {
       console.error('Nenhuma playlist configurada.');
       return;
     }
     const playlistId = this.playlists[this.currentPlaylistIndex];
-    this.YTPSub = this.youtubeService.getPlaylistVideos(playlistId).subscribe(
-      (response: any) => {
-        this.currentPlaylistVideos = response.items;
+    this.YTPSub = combineLatest([
+      this.youtubeService.getPlaylistVideos(playlistId),
+      this.youtubeService.getPlaylistVideos(this.adsPlaylists),
+    ]).subscribe(([commonVideos, adsVideos]) => {
+        this.currentPlaylistVideos = commonVideos.items;
+        this.scheduledADSVideoIds = adsVideos.items.map((e: any) => e.snippet.resourceId.videoId);
         this.currentVideoIndex = 0;
         this.playCurrentVideo();
+        this.startScheduledTimer();
       },
       (error) => {
         console.error('Erro ao carregar playlist:', error);
       }
     );
+  }
+
+  loadNextPlaylistStandalone(){
+    console.info('Load next playlist')
+    const playlistId = this.playlists[this.currentPlaylistIndex];
+    this.tempSub = this.youtubeService.getPlaylistVideos(playlistId).subscribe(playlist => {
+      this.currentPlaylistVideos = playlist.items;
+      this.currentVideoIndex = 0;
+      this.playCurrentVideo();
+      this.tempSub.unsubscribe();
+    });
   }
 
   // Define o vídeo atual com base no índice da playlist
@@ -89,11 +104,6 @@ export class YoutubePlayerComponent implements OnInit, OnDestroy {
       this.goToNextPlaylist();
     }
   }
-
-  getEmbededUrl(videoId: string): SafeResourceUrl{
-    return this.sanitizer.bypassSecurityTrustResourceUrl('https://www.youtube.com/embed/' + videoId + '?modestbranding=1&showinfo=0&autoplay=1');
-  }
-
   // Método disparado a partir do evento onStateChange do player
   onPlayerStateChange(event: any): void {
     // Se o vídeo terminou (estado "ended")
@@ -113,7 +123,13 @@ export class YoutubePlayerComponent implements OnInit, OnDestroy {
     console.info('Loading next video');
     this.currentVideoIndex++;
     if (this.currentVideoIndex >= this.currentPlaylistVideos.length) {
-      this.goToNextPlaylist();
+      if(this.playlists.length === 1){
+        console.info('Restar currentVideoIndex')
+        this.currentVideoIndex = 0;
+        this.playCurrentVideo();
+      } else {
+        this.goToNextPlaylist();
+      }
     } else {
       this.playCurrentVideo();
     }
@@ -123,14 +139,19 @@ export class YoutubePlayerComponent implements OnInit, OnDestroy {
   goToNextPlaylist(): void {
     this.currentPlaylistIndex =
       (this.currentPlaylistIndex + 1) % this.playlists.length;
-    this.loadCurrentPlaylist();
+    this.loadNextPlaylistStandalone();
   }
 
   // Inicia o timer que dispara a reprodução dos vídeos específicos em intervalos regulares
   startScheduledTimer(): void {
-    this.scheduledSub = interval(this.scheduledADSInterval).subscribe(() => {
+    this.scheduleTime = 60 * 60 * 1000 / (this.scheduledADSVideoIds.length * this.playADSCountPerHour);
+    console.log(`Each Ads video need to be played ${this.playADSCountPerHour} times per hour`);
+    console.log(`We have ${this.scheduledADSVideoIds.length} items, Ads video will play in each ${(this.scheduleTime/ 60000).toFixed(2)} minutes`);
+    this.startAdsProgress();
+    this.scheduledSub = interval(this.scheduleTime).subscribe(() => {
       // Salva o estado da playlist apenas se não estiver executando um vídeo agendado no momento
       if (!this.isScheduledPlaying) {
+        this.startAdsProgress();
         console.info('Loading and play Ads video');
         this.savedPlaylistIndex = this.currentPlaylistIndex;
         this.savedVideoIndex = this.currentVideoIndex;
@@ -157,5 +178,17 @@ export class YoutubePlayerComponent implements OnInit, OnDestroy {
   onPlayerReady(e: any) {
     console.info('Play video');
     e.target.playVideo();
+  }
+
+  startAdsProgress(){
+    this.adsStartTime = Date.now();
+    const updateProgress = () => {
+      const elapsedTime = Date.now() - this.adsStartTime;
+      this.adsTimeProgress = Math.min((elapsedTime / this.scheduleTime) * 100, 100);
+      if (this.adsTimeProgress < 100) {
+        requestAnimationFrame(updateProgress);
+      }
+    }
+    updateProgress();
   }
 }

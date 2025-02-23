@@ -29,9 +29,9 @@
             "assets": [],
             "index": "src/index.html",
             "browser": "src/main.ts",
-            "outputPath": "dist/demo",
+            "outputPath": "dist/html",
             "polyfills": ["zone.js"],
-            "scripts": [],
+            "scripts": ["src/app/assets/js/youtube-iframe-api.js"],
             "styles": ["src/global_styles.css"],
             "tsConfig": "tsconfig.app.json"
           }

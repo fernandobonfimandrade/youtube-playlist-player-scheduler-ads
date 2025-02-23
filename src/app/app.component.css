@@ -5,4 +5,5 @@ html, body, app-root, app-youtube-player, youtube-player, youtube-player > div, 
     display: block;
     padding: 0;
     margin: 0;
+    background-color: black;
 }
