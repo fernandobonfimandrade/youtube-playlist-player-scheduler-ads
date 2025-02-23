@@ -1,5 +1,5 @@
 {
-  "name": "angular-starter",
+  "name": "youtube-playlist-player",
   "private": true,
   "scripts": {
     "ng": "ng",
