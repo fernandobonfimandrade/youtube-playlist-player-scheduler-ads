@@ -5,7 +5,7 @@
   },
   "newProjectRoot": "projects",
   "projects": {
-    "demo": {
+    "youtube-playlist-player": {
       "architect": {
         "build": {
           "builder": "@angular/build:application",

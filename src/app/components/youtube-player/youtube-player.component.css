@@ -1,9 +1,28 @@
 .loadADSTimeBar{
     width: 0;
-    height: 5px;
+    height: 1px;
     background: red;
     position: absolute;
     top: 0;
     z-index: 2;
     transition: width linear;
+}
+
+.opacity{
+    opacity: 0;
+}
+
+.commonPlayer{
+    position: absolute;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 1;
+    background: none !important;
+}
+.adsPlayer{
+    position: absolute;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 2;
+    background: none !important;
 }

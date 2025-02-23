@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewEncapsulation, ViewChild } from '@angular/core';
 import { combineLatest, interval, Subscription } from 'rxjs';
 import { YoutubeService } from '../../services/youtube.service';
 import { YouTubePlayer } from '@angular/youtube-player';
@@ -14,6 +14,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
   standalone: true,
 })
 export class YoutubePlayerComponent implements OnInit, OnDestroy {
+  @ViewChild('playerCommonVideos', {static: false}) player: YouTubePlayer | undefined;
   // IDs das playlists que serão reproduzidas em sequência
   scheduledSub: Subscription = new Subscription();
   YTPSub: Subscription = new Subscription();
@@ -30,7 +31,8 @@ export class YoutubePlayerComponent implements OnInit, OnDestroy {
   currentScheduledPlaylistVideos: any[] = [];
   currentVideoIndex = 0;
   currentVideoId = '';
-  playADSCountPerHour = 4;
+  currentAdsVideoId = '';
+  playADSCountPerHour = 20;
   scheduleTime = 0;
   adsStartTime: number = 0;
   adsTimeProgress: number = 0;
@@ -71,7 +73,7 @@ export class YoutubePlayerComponent implements OnInit, OnDestroy {
         this.scheduledADSVideoIds = adsVideos.items.map((e: any) => e.snippet.resourceId.videoId);
         this.currentVideoIndex = 0;
         this.playCurrentVideo();
-        this.startScheduledTimer();
+        this.startScheduledAdsTimer();
       },
       (error) => {
         console.error('Erro ao carregar playlist:', error);
@@ -108,12 +110,17 @@ export class YoutubePlayerComponent implements OnInit, OnDestroy {
   onPlayerStateChange(event: any): void {
     // Se o vídeo terminou (estado "ended")
     if (event.data === 0) {
+      this.nextVideo();
+    }
+  }
+  // Método disparado a partir do evento onStateChange do player
+  onPlayerAdsStateChange(event: any): void {
+    // Se o vídeo terminou (estado "ended")
+    if (event.data === 0) {
       if (this.isScheduledPlaying) {
         // Finalizou vídeo agendado: retoma a sequência da playlist
         this.isScheduledPlaying = false;
         this.resumePlaylist();
-      } else {
-        this.nextVideo();
       }
     }
   }
@@ -143,7 +150,7 @@ export class YoutubePlayerComponent implements OnInit, OnDestroy {
   }
 
   // Inicia o timer que dispara a reprodução dos vídeos específicos em intervalos regulares
-  startScheduledTimer(): void {
+  startScheduledAdsTimer(): void {
     this.scheduleTime = 60 * 60 * 1000 / (this.scheduledADSVideoIds.length * this.playADSCountPerHour);
     console.log(`Each Ads video need to be played ${this.playADSCountPerHour} times per hour`);
     console.log(`We have ${this.scheduledADSVideoIds.length} items, Ads video will play in each ${(this.scheduleTime/ 60000).toFixed(2)} minutes`);
@@ -151,31 +158,37 @@ export class YoutubePlayerComponent implements OnInit, OnDestroy {
     this.scheduledSub = interval(this.scheduleTime).subscribe(() => {
       // Salva o estado da playlist apenas se não estiver executando um vídeo agendado no momento
       if (!this.isScheduledPlaying) {
+        this.pauseVideo();
         this.startAdsProgress();
         console.info('Loading and play Ads video');
-        this.savedPlaylistIndex = this.currentPlaylistIndex;
-        this.savedVideoIndex = this.currentVideoIndex;
-        this.playScheduledVideo();
+        // this.savedPlaylistIndex = this.currentPlaylistIndex;
+        // this.savedVideoIndex = this.currentVideoIndex;
+        this.playScheduledAdsVideo();
       }
     });
   }
 
   // Reproduz um vídeo agendado (utilizando uma lógica round-robin se houver vários)
-  playScheduledVideo(): void {
+  playScheduledAdsVideo(): void {
     this.isScheduledPlaying = true;
     const videoId = this.scheduledADSVideoIds[this.scheduledADSIndex];
     this.scheduledADSIndex =
       (this.scheduledADSIndex + 1) % this.scheduledADSVideoIds.length;
-    this.currentVideoId = videoId;
+    this.currentAdsVideoId = videoId;
   }
 
   // Retoma a reprodução da playlist a partir do ponto salvo
   resumePlaylist(): void {
-    this.currentPlaylistIndex = this.savedPlaylistIndex;
-    this.currentVideoIndex = this.savedVideoIndex;
-    this.playCurrentVideo();
+    // this.currentPlaylistIndex = this.savedPlaylistIndex;
+    // this.currentVideoIndex = this.savedVideoIndex;
+    // this.playCurrentVideo();
+    this.player?.playVideo();
   }
   onPlayerReady(e: any) {
+    console.info('Play video');
+    e.target.playVideo();
+  }
+  onPlayerAdsReady(e: any) {
     console.info('Play video');
     e.target.playVideo();
   }
@@ -190,5 +203,11 @@ export class YoutubePlayerComponent implements OnInit, OnDestroy {
       }
     }
     updateProgress();
+  }
+
+  pauseVideo() {
+    if (this.player) {
+      this.player.pauseVideo();
+    }
   }
 }

@@ -1,11 +1,26 @@
 <div class="video-player-container" *ngIf="currentPlaylistVideos.length > 0">
   <youtube-player
+    #playerCommonVideos
+    class="commonPlayer"
+    [ngClass]="{opacity : isScheduledPlaying}"
     [videoId]="currentVideoId"
     [height]="'100vh'"
     [width]="'100vw'"
     (ready)="onPlayerReady($event)"
     [playerVars]="{ autoplay: 1, mute: 1 }"
     (stateChange)="onPlayerStateChange($event)"
+  >
+  </youtube-player>
+  <youtube-player
+    #playerAdsVideos
+    class="adsPlayer"
+    [ngClass]="{opacity : !isScheduledPlaying}"
+    [videoId]="currentAdsVideoId"
+    [height]="'100vh'"
+    [width]="'100vw'"
+    (ready)="onPlayerAdsReady($event)"
+    [playerVars]="{ autoplay: 1, mute: 1 }"
+    (stateChange)="onPlayerAdsStateChange($event)"
   >
   </youtube-player>
 </div>
