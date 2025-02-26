@@ -24,15 +24,15 @@ export class YoutubePlayerComponent implements OnInit, OnDestroy {
   savedPlaylistIndex: number = 0;
   savedVideoIndex: number = 0;
 
-  playlists: string[] = ['PLfKvtXXEgOvCAWcpT_PU4KIwLRtjKUqv5'];
-  adsPlaylists: string = 'PLfKvtXXEgOvAaRGUchlMexLdnErwaCZgG';
+  playlists: string[] = ['PLBwJmG6EuxuFu9rFTdJkc0CregAcv8JzY'];
+  adsPlaylists: string = 'PLBwJmG6EuxuHIwrM1BEbWDfqMWfh2PqLe';
   currentPlaylistIndex = 0;
   currentPlaylistVideos: any[] = [];
   currentScheduledPlaylistVideos: any[] = [];
   currentVideoIndex = 0;
   currentVideoId = '';
   currentAdsVideoId = '';
-  playADSCountPerHour = 20;
+  playADSCountPerHour = 2;
   scheduleTime = 0;
   adsStartTime: number = 0;
   adsTimeProgress: number = 0;
