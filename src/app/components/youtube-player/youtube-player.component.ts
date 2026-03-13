@@ -66,7 +66,16 @@ export class YoutubePlayerComponent implements OnInit, OnDestroy {
       this.adsPlaylists = adsPlaylistsParam.trim();
     }
 
+    const playADSCountPerHourParam = urlParams.get('playADSCountPerHour');
+    if (playADSCountPerHourParam) {
+      const parsedCount = parseInt(playADSCountPerHourParam, 10);
+      if (!isNaN(parsedCount) && parsedCount > 0) {
+        this.playADSCountPerHour = parsedCount;
+      }
+    }
+
     this.loadInitialPlaylists();
+
     this.setupRemoteControl();
   }
 

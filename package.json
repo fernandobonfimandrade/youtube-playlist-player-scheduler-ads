@@ -4,8 +4,11 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build"
+    "build": "ng build",
+    "deploy": "ng build --configuration production --base-href /youtube-playlist-player-scheduler-ads/ && npx angular-cli-ghpages --dir=dist/html"
   },
+
+
   "dependencies": {
     "@angular/animations": "^19.0.6",
     "@angular/common": "^19.0.6",
