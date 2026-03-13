@@ -7,8 +7,9 @@
     [height]="'100vh'"
     [width]="'100vw'"
     (ready)="onPlayerReady($event)"
-    [playerVars]="{ autoplay: 1, mute: 1 }"
+    [playerVars]="{ autoplay: 1, mute: 1, enablejsapi: 1, origin: 'host', rel: 0 }"
     (stateChange)="onPlayerStateChange($event)"
+    (error)="handlePlayerError($event)"
   >
   </youtube-player>
   <youtube-player
@@ -19,9 +20,15 @@
     [height]="'100vh'"
     [width]="'100vw'"
     (ready)="onPlayerAdsReady($event)"
-    [playerVars]="{ autoplay: 1, mute: 1 }"
+    [playerVars]="{ autoplay: 1, mute: 1, enablejsapi: 1, origin: 'host', rel: 0 }"
     (stateChange)="onPlayerAdsStateChange($event)"
+    (error)="handlePlayerError($event)"
   >
   </youtube-player>
 </div>
 <div class="loadADSTimeBar" [style.width.%]="adsTimeProgress"></div>
+
+<div class="overlay-click-to-start" *ngIf="needsUserInteraction" (click)="startFromOverlay()">
+    <button class="btn">Clique aqui ou aperte OK no controle para iniciar</button>
+</div>
+

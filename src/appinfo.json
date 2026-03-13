@@ -1,0 +1,14 @@
+{
+    "id": "com.youtubeplaylistplayer.app",
+    "version": "1.0.0",
+    "vendor": "Fernando Andrade",
+    "type": "web",
+    "main": "index.html",
+    "title": "YouTube Playlist Player",
+    "icon": "favicon.ico",
+    "largeIcon": "favicon.ico",
+    "width": 1920,
+    "height": 1080,
+    "uiRotation": "landscape",
+    "disableBackHistoryAPI": false
+}

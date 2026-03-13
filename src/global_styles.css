@@ -1,1 +1,18 @@
-/* Add application styles & imports to this file! */
+/* Hides mouse cursor for regular TV experience */
+html, body {
+  cursor: none !important;
+  margin: 0;
+  padding: 0;
+  background: black;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Ensure overscan safe area for the progress bar */
+.loadADSTimeBar {
+    bottom: 20px; /* Moves it up slightly to avoid screen edges */
+    top: auto !important;
+    height: 4px !important;
+}

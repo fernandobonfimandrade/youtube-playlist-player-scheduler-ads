@@ -4,6 +4,7 @@ import { YoutubeService } from '../../services/youtube.service';
 import { YouTubePlayer } from '@angular/youtube-player';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { RemoteControlService } from '../../services/remote-control.service';
 
 @Component({
   imports: [CommonModule, YouTubePlayer],
@@ -15,6 +16,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 })
 export class YoutubePlayerComponent implements OnInit, OnDestroy {
   @ViewChild('playerCommonVideos', {static: false}) player: YouTubePlayer | undefined;
+  @ViewChild('playerAdsVideos', {static: false}) playerAdsVideos: YouTubePlayer | undefined;
   // IDs das playlists que serão reproduzidas em sequência
   scheduledSub: Subscription = new Subscription();
   YTPSub: Subscription = new Subscription();
@@ -43,10 +45,61 @@ export class YoutubePlayerComponent implements OnInit, OnDestroy {
   // IDs dos vídeos que precisam ser reproduzidos em intervalos definidos (ex: N vezes por hora)
   scheduledADSVideoIds: string[] = [];
   scheduledADSIndex = 0;
-  constructor(private youtubeService: YoutubeService, private sanitizer: DomSanitizer) {}
+  needsUserInteraction = false;
+
+  constructor(
+    private youtubeService: YoutubeService, 
+    private sanitizer: DomSanitizer,
+    private remoteControl: RemoteControlService
+  ) {}
 
   ngOnInit(): void {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    const playlistsParam = urlParams.get('playlists');
+    if (playlistsParam) {
+      this.playlists = playlistsParam.split(',').map(p => p.trim());
+    }
+
+    const adsPlaylistsParam = urlParams.get('adsPlaylists');
+    if (adsPlaylistsParam) {
+      this.adsPlaylists = adsPlaylistsParam.trim();
+    }
+
     this.loadInitialPlaylists();
+    this.setupRemoteControl();
+  }
+
+  setupRemoteControl(): void {
+    this.remoteControl.keyEvents$.subscribe(event => {
+      const keyCode = event.keyCode;
+      
+      if (this.remoteControl.isEnterKey(keyCode)) {
+        this.togglePlayback();
+      } else if (this.remoteControl.isBackKey(keyCode)) {
+        // Logica para voltar ou sair (pode ser customizada)
+        console.log('Back button pressed');
+      }
+    });
+  }
+
+  togglePlayback(): void {
+    if (this.needsUserInteraction) {
+      this.startFromOverlay();
+      return;
+    }
+
+    const currentPlayer = this.isScheduledPlaying ? this.playerAdsVideos : this.player;
+    if (currentPlayer) {
+      // O @angular/youtube-player não expõe o estado diretamente de fácil acesso sem o target do evento, 
+      // então usamos play/pause genérico.
+      currentPlayer.playVideo(); 
+    }
+  }
+
+  startFromOverlay(): void {
+    this.needsUserInteraction = false;
+    this.player?.playVideo();
   }
 
   ngOnDestroy(): void {
@@ -191,6 +244,12 @@ export class YoutubePlayerComponent implements OnInit, OnDestroy {
   onPlayerAdsReady(e: any) {
     console.info('Play video');
     e.target.playVideo();
+  }
+
+  handlePlayerError(event: any): void {
+    console.error('Player error:', event);
+    // Se erro de reprodução, mostramos o overlay
+    this.needsUserInteraction = true;
   }
 
   startAdsProgress(){

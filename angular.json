@@ -38,7 +38,11 @@
             }
           },
           "options": {
-            "assets": [],
+            "assets": [
+              "src/favicon.ico",
+              "src/config.xml",
+              "src/appinfo.json"
+            ],
             "index": "src/index.html",
             "browser": "src/main.ts",
             "outputPath": {
